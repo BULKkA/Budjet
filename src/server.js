@@ -24,6 +24,9 @@ const { getDb, ensureSchema } = require('./db');
 const PORT = Number(process.env.PORT || 3000);
 const BACKEND_VERSION = "expensebackend-sync-debug-v4";
 
+// Unambiguous startup version marker from env
+const APP_VERSION = process.env.APP_VERSION ?? "APP_VERSION_NOT_SET";
+
 function requireAuth(req, reply) {
   const header = req.headers['authorization'];
 
