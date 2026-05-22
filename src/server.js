@@ -405,6 +405,7 @@ fastify.route({
     }
   },
   handler: async (req, reply) => {
+    req.log.info({ reqId: req.id, url: req.url }, 'sync changes handler entered');
     const userId = req.userId;
 
     const cursorRaw = req.query.cursor;
