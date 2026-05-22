@@ -58,7 +58,7 @@ function requireAuth(req, reply) {
     req.log.info({ userId: req.userId, tokenLen: token.length }, 'auth success');
   } catch (e) {
     req.log.warn({ tokenLen: token.length, err: e?.message }, 'auth failed: invalid token');
-    reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid token' });
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid token' });
   }
 }
 
@@ -417,9 +417,12 @@ fastify.route({
     const cursorValue = cursorRaw === null || cursorRaw === undefined ? -1n : BigInt(cursorRaw);
 
     const db = getDb();
+    req.log.info({ userId, cursorValue: String(cursorValue), limit }, 'sync changes db.connect begin');
     const client = await db.connect();
+    req.log.info({ userId, limit }, 'sync changes db.connect ok');
 
     try {
+      req.log.info({ userId, limit }, 'sync changes select begin');
       const res = await client.query(
         `
         SELECT
@@ -438,6 +441,7 @@ fastify.route({
         `,
         [userId, cursorValue, limit]
       );
+      req.log.info({ userId, limit, rows: res?.rowCount ?? 0 }, 'sync changes select ok');
 
       const changes = res.rows.map((row) => {
         const payload = row.action === 'DELETE' ? null : row.payload;
