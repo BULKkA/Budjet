@@ -22,6 +22,7 @@ const jwt = require('jsonwebtoken');
 const { getDb, ensureSchema } = require('./db');
 
 const PORT = Number(process.env.PORT || 3000);
+const BACKEND_VERSION = "expensebackend-sync-debug-v4";
 
 function requireAuth(req, reply) {
   const header = req.headers['authorization'];
@@ -467,6 +468,7 @@ fastify.route({
 async function start() {
   await ensureSchema();
 
+  fastify.log.info({ BACKEND_VERSION }, "backend boot");
   fastify.listen({ port: PORT, host: '0.0.0.0' }, (err) => {
     if (err) {
       fastify.log.error(err);
