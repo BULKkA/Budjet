@@ -4,6 +4,20 @@ const fastify = require('fastify')({
   logger: true
 });
 
+fastify.setErrorHandler(function (err, req, reply) {
+  // Log errors for our sync endpoints (auth failures/validation/handler exceptions)
+  if (req?.url?.startsWith('/v1/sync/')) {
+    req.log.error({ err }, 'sync endpoint error');
+  }
+  reply.send(err);
+});
+
+fastify.addHook('onResponse', async (req, reply) => {
+  if (req?.url?.startsWith('/v1/sync/')) {
+    req.log.info({ statusCode: reply.statusCode }, 'sync request completed');
+  }
+});
+
 const jwt = require('jsonwebtoken');
 const { getDb, ensureSchema } = require('./db');
 
