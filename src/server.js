@@ -59,6 +59,7 @@ function requireAuth(req, reply) {
     if (!userId) throw new Error('Missing userId in token');
     req.userId = String(userId);
     req.log.info({ userId: req.userId, tokenLen: token.length }, 'auth success');
+    return;
   } catch (e) {
     req.log.warn({ tokenLen: token.length, err: e?.message }, 'auth failed: invalid token');
     return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid token' });
