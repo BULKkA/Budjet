@@ -472,6 +472,7 @@ fastify.route({
 async function start() {
   await ensureSchema();
 
+  fastify.log.info({ APP_VERSION, BACKEND_VERSION }, "backend boot (versions)");
   fastify.log.info({ BACKEND_VERSION }, "backend boot");
   fastify.listen({ port: PORT, host: '0.0.0.0' }, (err) => {
     if (err) {
