@@ -11,13 +11,16 @@ const PORT = Number(process.env.PORT || 3000);
 
 function requireAuth(req, reply) {
   const header = req.headers['authorization'];
+
   if (!header) {
+    req.log.warn('auth failed: missing Authorization header');
     reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Missing Authorization header' });
     return;
   }
 
   const m = header.match(/^Bearer\s+(.+)$/i);
   if (!m) {
+    req.log.warn({ authHeaderLen: String(header).length }, 'auth failed: invalid Authorization header format');
     reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid Authorization header format' });
     return;
   }
@@ -25,16 +28,21 @@ function requireAuth(req, reply) {
   const token = m[1];
   const secret = process.env.JWT_SECRET;
   if (!secret) {
+    req.log.error('auth failed: JWT_SECRET is not set');
     reply.code(500).send({ error: 'SERVER_MISCONFIG', message: 'JWT_SECRET is not set' });
     return;
   }
+
+  req.log.info({ tokenLen: token.length }, 'auth: token received');
 
   try {
     const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
     const userId = decoded.sub || decoded.userId;
     if (!userId) throw new Error('Missing userId in token');
     req.userId = String(userId);
+    req.log.info({ userId: req.userId, tokenLen: token.length }, 'auth success');
   } catch (e) {
+    req.log.warn({ tokenLen: token.length, err: e?.message }, 'auth failed: invalid token');
     reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid token' });
   }
 }
@@ -113,6 +121,8 @@ fastify.route({
   handler: async (req, reply) => {
     const userId = req.userId;
     const mutations = req.body.mutations;
+
+    req.log.info({ userId, mutationsCount: mutations?.length ?? 0 }, 'sync push start');
 
     // extra guard (in case schema maxItems is bypassed by custom serializers)
     const MAX_MUTATIONS = Number(process.env.MAX_MUTATIONS_PER_REQUEST || 100);
@@ -385,6 +395,8 @@ fastify.route({
 
     const cursorRaw = req.query.cursor;
     const limit = Number(req.query.limit || 100);
+
+    req.log.info({ userId, cursorRaw, limit }, 'sync changes start');
 
     const cursorValue = cursorRaw === null || cursorRaw === undefined ? -1n : BigInt(cursorRaw);
 
